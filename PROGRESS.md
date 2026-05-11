@@ -11,6 +11,9 @@ Use Markdown task lists: `- [ ]` not done, `- [x]` done. Update this file as you
 - [x] Requirements and scope documented (`REQUIREMENTS.md`)
 - [x] Reference PDFs collected under `resources/pdfs/` (papers + doc snapshots)
 - [x] `.gitignore` includes `.DS_Store`
+- [x] MVP scaffold added: Python package, CLI, Streamlit UI, sample corpus, evaluation questions
+- [x] Deterministic baseline pipeline works: ingest → chunk → heuristic extract → graph/vector indexes → query
+- [x] Optional Ollama and LightRAG integration points added
 
 ---
 
@@ -18,36 +21,36 @@ Use Markdown task lists: `- [ ]` not done, `- [x]` done. Update this file as you
 
 ### Decisions (§19 open questions)
 
-- [ ] Main prototype stack chosen (e.g. Microsoft GraphRAG, LightRAG, Neo4j path, or hybrid)
-- [ ] Graph storage choice for v1 (Neo4j vs files/embedded vs tool default)
-- [ ] Corpus language(s): English, Polish, or both
-- [ ] First local LLM to test (and fallback if needed)
-- [ ] Target article count for demo
-- [ ] UI emphasis: NL answers, graph view, or both
-- [ ] Event extraction depth (light vs richer schema)
+- [x] Main prototype stack chosen (LightRAG harness + lightweight local baselines)
+- [x] Graph storage choice for v1 (local JSON + NetworkX; LightRAG working dir optional)
+- [x] Corpus language(s): English for v1 bundled demo
+- [x] First local LLM to test (Ollama `llama3.1:8b`; heuristic fallback)
+- [x] Target article count for demo (8 bundled now; 10–30 recommended for final)
+- [x] UI emphasis: NL answers plus evidence and graph fragment
+- [x] Event extraction depth (light event nodes from titles/event-like phrases)
 - [ ] Report emphasis: comparison vs architecture vs evaluation
 
 ### Milestone coverage
 
 - [ ] **M1** Literature and tool review complete
-- [ ] **M2** Tutorial POC run end-to-end on sample data
-- [ ] **M3** Article corpus prepared + test question set
-- [ ] **M4** Prototype: ingest → extract → graph → query (+ simple UI)
+- [x] **M2** Tutorial POC run end-to-end on sample data
+- [x] **M3** Article corpus prepared + test question set
+- [x] **M4** Prototype: ingest → extract → graph → query (+ simple UI)
 - [ ] **M5** Local LLM experiment documented (vs cloud if applicable)
-- [ ] **M6** Evaluation run (baseline + qualitative/quantitative notes)
+- [x] **M6** Evaluation run (baseline + qualitative/quantitative notes)
 - [ ] **M7** Final report draft + demo scenario + findings summary
 
 ### Core objectives (§3) — check when evidenced in repo or report
 
 - [ ] GraphRAG vs classical RAG explained (report or docs)
 - [ ] At least two approaches/tools compared; one main path selected
-- [ ] POC processes a small article corpus
-- [ ] Entities / events / relations extracted (as designed)
-- [ ] Knowledge stored in a graph-like form
-- [ ] Simple search or query interface works
-- [ ] Relation-style questions supported (within chosen limits)
+- [x] POC processes a small article corpus
+- [x] Entities / events / relations extracted (as designed)
+- [x] Knowledge stored in a graph-like form
+- [x] Simple search or query interface works
+- [x] Relation-style questions supported (within chosen limits)
 - [ ] Local LLM feasibility tested where applicable
-- [ ] Evaluation shows whether the approach helps for your case
+- [x] Evaluation shows whether the approach helps for your case
 - [ ] Final report covers assumptions, architecture, tests, limits, continuation
 
 ---

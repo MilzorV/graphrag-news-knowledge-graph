@@ -1,0 +1,66 @@
+[
+  {
+    "id": "warsaw-energy-summit",
+    "title": "Warsaw Energy Summit Opens With Baltic Grid Agreement",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-04-14",
+    "author": "Demo Desk",
+    "text": "Warsaw hosted the Regional Energy Summit on April 14, 2026. Maria Nowak, the Polish energy minister, met with Jonas Berg from NordicGrid and representatives of GreenGrid Europe. The participants announced the Baltic Grid Agreement, a plan to connect offshore wind farms near Gdansk with battery storage sites in Warsaw and Vilnius. GreenGrid Europe said the project would use sensors supplied by Amber Analytics. Climate group Clear Air Forum welcomed the agreement but asked for public reporting on procurement."
+  },
+  {
+    "id": "gdansk-port-procurement",
+    "title": "Gdansk Port Authority Reviews Sensor Procurement",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-04-16",
+    "author": "Demo Desk",
+    "text": "The Gdansk Port Authority opened a procurement review on April 16, 2026 after Clear Air Forum questioned a sensor contract awarded to Amber Analytics. Port director Ewa Lewandowska said the review is connected to monitoring equipment planned for offshore terminals. Amber Analytics spokesperson Tomasz Wrobel said the company had also supplied devices for the Baltic Grid Agreement. GreenGrid Europe declined to comment on the review."
+  },
+  {
+    "id": "krakow-flood-response",
+    "title": "Krakow Flood Response Draws Support From National Rescue Agency",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-04-18",
+    "author": "Demo Desk",
+    "text": "Heavy rain caused the Vistula Flood Response in Krakow on April 18, 2026. Mayor Anna Kowalska coordinated evacuations with the National Rescue Agency and volunteers from Clear Air Forum. The agency sent mobile pumps and emergency drones supplied by Amber Analytics. Maria Nowak said energy crews would inspect battery storage sites that feed the Warsaw grid. No injuries were reported by Sunday evening."
+  },
+  {
+    "id": "vilnius-grid-talks",
+    "title": "Vilnius Talks Extend Baltic Grid Plan",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-04-21",
+    "author": "Demo Desk",
+    "text": "Officials from Poland, Lithuania, and NordicGrid met in Vilnius on April 21, 2026 to discuss an extension of the Baltic Grid Agreement. Jonas Berg proposed a shared operations center in Vilnius. Maria Nowak supported the proposal and said GreenGrid Europe would publish technical milestones in May. The meeting also included observers from the European Climate Directorate."
+  },
+  {
+    "id": "parliament-hearing",
+    "title": "Parliament Committee Questions Amber Analytics Contract",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-04-25",
+    "author": "Demo Desk",
+    "text": "A parliamentary infrastructure committee held a hearing in Warsaw on April 25, 2026 about contracts linked to Amber Analytics. Ewa Lewandowska testified that the Gdansk Port Authority had started its own procurement review. Tomasz Wrobel told lawmakers that Amber Analytics followed public procurement rules. Clear Air Forum asked the committee to compare the port contract with equipment listed in the Baltic Grid Agreement."
+  },
+  {
+    "id": "green-grid-milestones",
+    "title": "GreenGrid Europe Publishes Baltic Grid Milestones",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-05-02",
+    "author": "Demo Desk",
+    "text": "GreenGrid Europe published a milestone schedule for the Baltic Grid Agreement on May 2, 2026. The first phase links Gdansk offshore wind farms to Warsaw battery storage by December. The second phase adds a Vilnius operations center operated with NordicGrid. Maria Nowak said the schedule responds to questions raised during the Warsaw hearing and the Gdansk procurement review."
+  },
+  {
+    "id": "rescue-drone-demo",
+    "title": "National Rescue Agency Tests Emergency Drones In Krakow",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-05-05",
+    "author": "Demo Desk",
+    "text": "The National Rescue Agency tested emergency drones in Krakow on May 5, 2026. Anna Kowalska said the drill used lessons from the Vistula Flood Response. Amber Analytics provided sensors for the drone fleet, while Clear Air Forum monitored air quality near the test route. The agency said the equipment is separate from the Gdansk Port Authority procurement review."
+  },
+  {
+    "id": "climate-directorate-review",
+    "title": "European Climate Directorate Reviews Regional Energy Resilience",
+    "source": "Synthetic Newswire",
+    "published_at": "2026-05-08",
+    "author": "Demo Desk",
+    "text": "The European Climate Directorate began a regional energy resilience review on May 8, 2026. The review covers the Baltic Grid Agreement, the Vilnius operations center, and flood response coordination in Krakow. Jonas Berg from NordicGrid said cross-border grid planning should include emergency response data. Clear Air Forum asked the Directorate to publish the evidence used in the review."
+  }
+]

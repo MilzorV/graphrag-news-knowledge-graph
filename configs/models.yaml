@@ -1,0 +1,13 @@
+ollama:
+  host: "http://localhost:11434"
+  chat_model: "llama3.1:8b"
+  embed_model: "nomic-embed-text"
+
+index:
+  max_chunk_chars: 1200
+  chunk_overlap_chars: 160
+  default_output_dir: "outputs/demo_index"
+
+retrieval:
+  default_top_k: 5
+  graph_hops: 2

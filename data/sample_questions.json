@@ -1,0 +1,52 @@
+[
+  {
+    "id": "q1",
+    "question": "What connects Maria Nowak with GreenGrid Europe?",
+    "expected": "Maria Nowak met GreenGrid Europe representatives at the Warsaw energy summit, supported the Vilnius operations proposal, and later commented on GreenGrid milestones."
+  },
+  {
+    "id": "q2",
+    "question": "Which events involved Amber Analytics?",
+    "expected": "Amber Analytics is connected to the Baltic Grid Agreement, Gdansk procurement review, parliamentary hearing, and rescue drone test."
+  },
+  {
+    "id": "q3",
+    "question": "Where did the Vistula Flood Response happen?",
+    "expected": "The flood response happened in Krakow."
+  },
+  {
+    "id": "q4",
+    "question": "Who participated in the Vilnius talks?",
+    "expected": "Officials from Poland, Lithuania, NordicGrid, Jonas Berg, Maria Nowak, and observers from the European Climate Directorate."
+  },
+  {
+    "id": "q5",
+    "question": "Which articles mention Clear Air Forum and Amber Analytics?",
+    "expected": "Gdansk procurement review, Krakow flood response, parliamentary hearing, rescue drone demo, and possibly climate review through Clear Air Forum."
+  },
+  {
+    "id": "q6",
+    "question": "What organizations are linked to the Gdansk Port Authority review?",
+    "expected": "Gdansk Port Authority, Clear Air Forum, Amber Analytics, GreenGrid Europe, and the parliamentary infrastructure committee."
+  },
+  {
+    "id": "q7",
+    "question": "What happened in Warsaw on April 25, 2026?",
+    "expected": "A parliamentary infrastructure committee held a hearing about Amber Analytics contracts."
+  },
+  {
+    "id": "q8",
+    "question": "How is NordicGrid connected to Vilnius?",
+    "expected": "NordicGrid joined the Vilnius talks and proposed or co-operated the Vilnius operations center."
+  },
+  {
+    "id": "q9",
+    "question": "Which evidence connects flood response and energy resilience?",
+    "expected": "The European Climate Directorate review covers both the Baltic Grid Agreement and flood response coordination in Krakow."
+  },
+  {
+    "id": "q10",
+    "question": "Which companies supplied sensors or devices?",
+    "expected": "Amber Analytics supplied sensors/devices for the Baltic Grid Agreement, port monitoring, and rescue drones."
+  }
+]
