@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 from . import __version__
-from .evaluation import run_evaluation, save_evaluation
+from .evaluation import run_evaluation, save_evaluation, summarize_evaluation
 from .graph_store import graph_summary
 from .lightrag_adapter import build_lightrag_index, is_lightrag_installed, query_lightrag
 from .loaders import load_articles
@@ -97,14 +97,19 @@ def eval(
     questions_path: Annotated[Path, typer.Option("--questions", "-q", help="Evaluation questions JSON.")] = DEFAULT_QUESTIONS_PATH,
     modes: Annotated[str, typer.Option("--modes", help="Comma-separated modes.")] = "keyword,vector,graph,hybrid",
     use_ollama: Annotated[bool, typer.Option("--ollama/--no-ollama", help="Use Ollama for generated answers.")] = False,
+    timestamped: Annotated[bool, typer.Option("--timestamped/--no-timestamped", help="Write evaluation_<timestamp>.csv.")] = False,
 ) -> None:
     """Run the sample evaluation questions across retrieval modes."""
     engine = RetrievalEngine.from_output_dir(output_dir)
     mode_list = [mode.strip() for mode in modes.split(",") if mode.strip()]
     df = run_evaluation(engine, questions_path=questions_path, modes=mode_list, use_ollama=use_ollama)
-    path = save_evaluation(df, output_dir)
+    path = save_evaluation(df, output_dir, timestamped=timestamped)
     console.print(f"Wrote evaluation: {path}")
-    console.print(df[["id", "mode", "top_source", "evidence_count", "latency_ms"]].to_string(index=False))
+    console.print(
+        df[["id", "mode", "expected_overlap", "top_source", "evidence_count", "latency_ms"]].to_string(index=False)
+    )
+    console.print("\nSummary by mode:")
+    console.print(summarize_evaluation(df).to_string(index=False))
 
 
 @app.command("summary")

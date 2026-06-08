@@ -19,6 +19,13 @@ uv run news-graphrag query "What connects Maria Nowak with GreenGrid Europe?" --
 uv run news-graphrag eval
 ```
 
+Corpus v1 (18 articles) and extended evaluation:
+
+```bash
+uv run news-graphrag ingest --input data/corpus_v1/corpus.json --output outputs/corpus_v1_index
+uv run news-graphrag eval --index outputs/corpus_v1_index --questions data/questions_v1.json
+```
+
 Start the UI:
 
 ```bash
@@ -67,7 +74,7 @@ uv run news-graphrag lightrag-query "What are the main relationships in the corp
 
 ## Data
 
-The bundled corpus is in `data/sample_articles/news_mini_corpus.json`. It contains synthetic news-style articles with repeated entities, events, locations, dates, and organizations. This avoids scraping/licensing friction while still giving the graph enough cross-document structure for a demo.
+The bundled demo corpus is in `data/sample_articles/news_mini_corpus.json` (8 articles). The expanded evaluation corpus is `data/corpus_v1/corpus.json` (18 interconnected energy/climate articles) with questions in `data/questions_v1.json`. Optional MIND conversion: `scripts/prepare_mind_subset.py`.
 
 Supported input formats:
 
@@ -96,7 +103,20 @@ Generated files are ignored by git and written to `outputs/demo_index/` by defau
 - `index.json`: articles, chunks, entities, relations, and evidence snippets;
 - `vector_index.pkl`: local TF-IDF vector index;
 - `run_info.json`: indexing parameters and graph counts;
-- `evaluation.csv`: comparison output from `news-graphrag eval`.
+- `evaluation.csv`: comparison output from `news-graphrag eval` (includes `expected_overlap` per question/mode).
+
+Use `--timestamped` on `eval` to write `evaluation_<UTC>.csv` for comparing runs (e.g. heuristic vs Ollama).
+
+## Documentation
+
+- [PROGRESS.md](PROGRESS.md) — milestone tracker and 5-week sprint checklist
+- [docs/literature_review.md](docs/literature_review.md) — related work summary
+- [docs/tool_comparison.md](docs/tool_comparison.md) — Microsoft GraphRAG vs LightRAG vs custom pipeline
+- [docs/evaluation_report.md](docs/evaluation_report.md) — mode comparison on corpus_v1
+- [docs/ollama_experiment.md](docs/ollama_experiment.md) — local LLM experiment design and baseline results
+- [docs/report_draft.md](docs/report_draft.md) — semester report draft
+- [docs/demo_script.md](docs/demo_script.md) — 5–10 minute demo walkthrough
+- [resources/pdfs/SOURCES.txt](resources/pdfs/SOURCES.txt) — PDF manifest with source URLs
 
 ## Project Structure
 
@@ -110,10 +130,14 @@ src/news_graphrag_demo/
   lightrag_adapter.py optional LightRAG wrapper
   evaluation.py       fixed question evaluation runner
 data/
-  sample_articles/    bundled demo corpus
+  sample_articles/    bundled demo corpus (8 articles)
+  corpus_v1/          expanded corpus (18 articles)
   sample_questions.json
+  questions_v1.json
+scripts/
+  prepare_mind_subset.py
 docs/
-  research_notes.md   short notes from collected papers/docs
+  literature_review.md, tool_comparison.md, evaluation_report.md, ...
 ```
 
 ## Tests
