@@ -1,0 +1,728 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── kodowanie i język ─────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[polish]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{csquotes}
+
+% ── grafika ───────────────────────────────────────────────────────────────────
+\usepackage[dvipsnames,svgnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, calc, shapes.geometric, backgrounds}
+
+% ── tabele i listy ────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+
+% ── odnośniki (ładowane na końcu) ─────────────────────────────────────────────
+\usepackage{hyperref}
+
+% ── stonowana paleta ──────────────────────────────────────────────────────────
+\definecolor{Navy}{HTML}{1F3A5F}      % nagłówki
+\definecolor{Blue}{HTML}{2F6DB5}      % akcent 1 (osoby / klasyczny RAG)
+\definecolor{Teal}{HTML}{2E8B82}      % akcent 2 (organizacje / graf)
+\definecolor{Amber}{HTML}{B8860B}     % zdarzenia
+\definecolor{Slate}{HTML}{5A6472}     % lokalizacje / tekst pomocniczy
+\definecolor{LightBlue}{HTML}{E4EDF7}
+\definecolor{LightTeal}{HTML}{E0F0EE}
+\definecolor{LightAmber}{HTML}{F6EFD9}
+\definecolor{LightSlate}{HTML}{ECEEF1}
+
+% odnośniki w stonowanym granacie, żeby referencje do rysunków były widoczne
+\hypersetup{colorlinks=true, linkcolor=Navy, citecolor=Navy, urlcolor=Navy}
+
+% ── nagłówki sekcji: jeden stonowany granat ───────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{Navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{Navy}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{Navy}}{\thesubsubsection}{0.6em}{}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% ── strona tytułowa ───────────────────────────────────────────────────────────
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+
+{\color{Slate}\large Raport projektowy}\\[2.5cm]
+
+{\color{Navy}\LARGE\bfseries Opracowanie prototypu GraphRAG\\[0.5em]
+wspomagającego wyszukiwanie powiązań\\[0.5em]
+pomiędzy obiektami i zdarzeniami\\[0.5em]
+występującymi w artykułach prasowych}\\[3.5cm]
+
+{\large
+Miłosz Słowiński\\[0.4em]
+Piotr Karamon
+}\\[3cm]
+
+{\color{Slate} 25 czerwca 2026}
+
+\vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Klasyczny RAG i jego ograniczenia}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Jak działa zwykły RAG}
+
+RAG (\textit{retrieval-augmented generation}, czyli generowanie wspomagane wyszukiwaniem)
+to technika, w której model językowy dostaje dodatkową wiedzę z zewnętrznego źródła. Sam
+model zna tylko to, czego nauczył się podczas treningu, i ma ograniczone okno kontekstu, więc
+nie da się wkleić do niego całej bazy dokumentów. Zamiast tego do modelu trafiają tylko
+niewielkie, dobrze dobrane fragmenty tekstu, które powinny zawierać odpowiedź.
+
+W najpopularniejszym wariancie, nazywanym tu RAG wektorowym, działa to następująco:
+
+\begin{enumerate}[itemsep=2pt]
+  \item Dokumenty dzielone są na krótkie fragmenty.
+  \item Każdy fragment zamieniany jest na wektor liczb (tak zwane osadzenie),
+        który oddaje jego znaczenie. Wektory trafiają do bazy wektorowej.
+  \item Pytanie użytkownika również zamieniane jest na wektor.
+  \item System wybiera $k$ fragmentów najbardziej podobnych do pytania (zwykle przez
+        podobieństwo kosinusowe wektorów).
+  \item Te fragmenty trafiają do okna kontekstu modelu, który na ich podstawie formułuje
+        odpowiedź.
+\end{enumerate}
+
+Całe podejście opiera się więc na jednej operacji: znajdź teksty podobne do pytania.
+
+\subsection{Kiedy to wystarcza}
+
+RAG wektorowy sprawdza się dobrze, gdy odpowiedź mieści się w jednym albo kilku fragmentach
+tekstu i gdy pytanie jest podobne do tego fragmentu pod względem słów lub znaczenia. Dobrze
+pasują tu proste pytania o fakty, na przykład \enquote{kiedy odbył się szczyt energetyczny
+w Warszawie?} albo \enquote{gdzie miała miejsce powódź?}. W takich przypadkach zwykle
+istnieje konkretny fragment tekstu, który wprost zawiera odpowiedź, a zadaniem systemu jest
+po prostu go odnaleźć.
+
+\subsection{Gdzie zawodzi}
+
+Problem pojawia się przy pytaniach, które wymagają zrozumienia powiązań między elementami
+rozrzuconymi po wielu dokumentach. Można je z grubsza podzielić na dwa rodzaje:
+
+\begin{itemize}[itemsep=3pt]
+  \item Pytania relacyjne, na przykład \enquote{co łączy Marię Nowak z firmą GreenGrid
+        Europe?} albo \enquote{kto brał udział w tym samym wydarzeniu co Amber Analytics?}.
+  \item Pytania o sens całości, na przykład \enquote{jakie główne wątki przewijają się
+        przez wszystkie te artykuły?} albo \enquote{które zdarzenia łączą się przez tych
+        samych uczestników?}.
+\end{itemize}
+
+W obu przypadkach nie istnieje pojedynczy fragment, który zawierałby gotową odpowiedź.
+Odpowiedź trzeba złożyć z wielu artykułów, często łącząc fakty, które nigdy nie pojawiają się
+razem w jednym fragmencie. Tu RAG wektorowy ma fundamentalne ograniczenie. Indeks wektorowy
+przechowuje listę fragmentów i potrafi mierzyć ich podobieństwo, ale sama taka struktura nie
+jest w stanie naturalnie oddać powiązań między obiektami opisanymi w korpusie. Dwa artykuły,
+które wspominają tę samą osobę, są w takim indeksie zupełnie niepowiązane, jeśli używają
+różnych słów. System może co najwyżej liczyć, że oba fragmenty
+naraz okażą się podobne do pytania i trafią do kontekstu, co przy większej liczbie powiązań
+przestaje działać.
+
+\subsection{Pomysł grafu wiedzy}
+
+Systemy grafowe rozwiązują ten problem, zmieniając to, co przechowuje indeks. Zamiast samej
+listy fragmentów budują graf wiedzy, w którym:
+
+\begin{itemize}[itemsep=2pt]
+  \item węzłami są encje, to znaczy konkretne osoby, organizacje, miejsca i zdarzenia,
+  \item krawędziami są relacje między nimi, na przykład \enquote{uczestniczy w},
+        \enquote{dostarcza}, \enquote{odbywa się w}.
+\end{itemize}
+
+Kluczowa zmiana polega na tym, że relacja staje się pełnoprawnym elementem indeksu, a nie
+czymś, co trzeba dopiero odgadnąć z tekstu w trakcie zapytania. Jeśli Maria Nowak pojawia
+się w pięciu artykułach, w grafie odpowiada jej jeden węzeł, do którego prowadzą krawędzie ze
+wszystkich tych artykułów. Dzięki temu, żeby odpowiedzieć na pytanie o powiązania, system nie
+musi mieć szczęścia przy doborze podobnych fragmentów. Może po prostu przejść po krawędziach
+grafu i odczytać, co i z czym jest połączone. Rysunek~\ref{fig:pipeline} zestawia oba
+podejścia.
+
+% ── Rysunek A: klasyczny RAG vs graph RAG ─────────────────────────────────────
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+  node distance=0.7cm,
+  box/.style={draw, rounded corners=3pt, align=center, minimum height=0.85cm,
+              minimum width=3.3cm, font=\small},
+  cb/.style={box, fill=LightBlue, draw=Blue},
+  gb/.style={box, fill=LightTeal, draw=Teal},
+  ans/.style={box, font=\small\bfseries},
+  arr/.style={-{Stealth[length=2.2mm]}, thick},
+  lab/.style={font=\scriptsize\itshape, text=Slate}
+]
+
+% lewa kolumna: klasyczny RAG
+\node[cb] (d1) {Dokumenty};
+\node[cb, below=of d1] (c1) {Fragmenty tekstu};
+\node[cb, below=of c1] (v1) {Baza wektorowa};
+\node[cb, below=of v1] (t1) {$k$ podobnych fragmentów};
+\node[ans, fill=LightBlue, draw=Blue, below=of t1] (a1) {Odpowiedź modelu};
+
+\draw[arr, Blue] (d1) -- node[lab, right]{podział} (c1);
+\draw[arr, Blue] (c1) -- node[lab, right]{osadzenia} (v1);
+\draw[arr, Blue] (v1) -- node[lab, right]{podobieństwo} (t1);
+\draw[arr, Blue] (t1) -- (a1);
+\node[font=\bfseries\small, color=Blue, above=0.25cm of d1] {Klasyczny RAG};
+
+% prawa kolumna: graph RAG
+\begin{scope}[xshift=7.2cm]
+\node[gb] (d2) {Dokumenty};
+\node[gb, below=of d2] (c2) {Fragmenty tekstu};
+\node[gb, below=of c2] (k2) {Graf wiedzy};
+\node[gb, below=of k2] (s2) {Podgraf / społeczności};
+\node[ans, fill=LightTeal, draw=Teal, below=of s2] (a2) {Odpowiedź modelu};
+
+\draw[arr, Teal] (d2) -- node[lab, right]{podział} (c2);
+\draw[arr, Teal] (c2) -- node[lab, right]{ekstrakcja encji} (k2);
+\draw[arr, Teal] (k2) -- node[lab, right]{przejście / podsumowania} (s2);
+\draw[arr, Teal] (s2) -- (a2);
+\node[font=\bfseries\small, color=Teal, above=0.25cm of d2] {RAG grafowy};
+\end{scope}
+
+% zapytanie
+\node[box, fill=LightAmber, draw=Amber, minimum width=2.4cm,
+      at={($(t1)!0.5!(s2)$)}, yshift=0.0cm] (q) {Pytanie};
+\draw[arr, Amber] (q) -- (t1);
+\draw[arr, Amber] (q) -- (s2);
+
+\end{tikzpicture}
+\caption{Klasyczny RAG wyszukuje fragmenty tekstu podobne do pytania. RAG grafowy buduje z
+tych samych dokumentów graf wiedzy i odpowiada, przechodząc po jego węzłach i krawędziach
+albo korzystając z gotowych podsumowań całych powiązanych ze sobą grup obiektów.}
+\label{fig:pipeline}
+\end{figure}
+
+To samo widać dobrze na przykładzie naszego korpusu artykułów prasowych.
+Rysunek~\ref{fig:kg} pokazuje uproszczony wycinek grafu wiedzy zbudowanego z wiadomości o
+bałtyckiej sieci energetycznej i o powodzi w Krakowie (korpus opisany jest dokładniej w
+dodatku~\ref{app:korpus}). Widać tam powiązania, których żaden
+pojedynczy artykuł nie zawiera w całości. Na przykład firma Amber Analytics dostarcza
+czujniki do projektu Baltic Grid Agreement, a jednocześnie drony użyte przy akcji
+powodziowej w Krakowie. Podobnie Maria Nowak pojawia się i na szczycie energetycznym, i przy
+reakcji na powódź. To są dokładnie te mosty między wątkami, które wyszukiwanie po
+podobieństwie tekstu gubi, a które w grafie są po prostu krawędziami.
+
+% ── Rysunek B: graf wiedzy z korpusu ──────────────────────────────────────────
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize},
+  ent/.style={draw, rounded corners=3pt, align=center, inner sep=4pt, font=\footnotesize},
+  person/.style={ent, fill=LightBlue, draw=Blue},
+  org/.style={ent, fill=LightTeal, draw=Teal},
+  event/.style={ent, fill=LightAmber, draw=Amber},
+  loc/.style={ent, fill=LightSlate, draw=Slate},
+  rel/.style={-{Stealth[length=1.8mm]}, draw=Slate!80, thin},
+  bridge/.style={-{Stealth[length=1.8mm]}, draw=Amber, thick, dashed},
+  rl/.style={font=\scriptsize\itshape, text=Slate, fill=white, inner sep=1.5pt}
+]
+
+% wątek energetyczny (lewa strona)
+\node[event]  (summit) at (1.7, 6.6) {Szczyt energetyczny\\w Warszawie};
+\node[loc]    (wawa)   at (0.4, 4.9) {Warszawa};
+\node[person] (nowak)  at (6.4, 7.1) {Maria Nowak};
+\node[event]  (bga)    at (3.4, 4.3) {Baltic Grid\\Agreement};
+\node[org]    (green)  at (1.4, 2.6) {GreenGrid Europe};
+\node[org]    (amber)  at (4.9, 2.4) {Amber Analytics};
+
+% wątek powodziowy (prawa strona)
+\node[event]  (flood)  at (9.3, 4.1) {Akcja powodziowa\\w Krakowie};
+\node[loc]    (krakow) at (10.9, 2.4) {Kraków};
+
+% relacje w obrębie wątku
+\draw[rel] (nowak)  -- node[rl, pos=0.45]{uczestniczy} (summit);
+\draw[rel] (nowak)  -- node[rl]{ogłasza} (bga);
+\draw[rel] (green)  -- node[rl]{realizuje} (bga);
+\draw[rel] (amber)  -- node[rl]{czujniki} (bga);
+\draw[rel] (summit) -- node[rl]{odbywa się w} (wawa);
+\draw[rel] (flood)  -- node[rl]{miejsce} (krakow);
+
+% mosty między wątkami
+\draw[bridge] (nowak) -- node[rl, pos=0.62]{komentuje} (flood);
+\draw[bridge] (amber) -- node[rl, pos=0.5]{drony} (flood);
+
+% legenda
+\begin{scope}[shift={(0,0.3)}]
+  \node[person, minimum width=1.4cm] (lp) at (0.6,0) {osoba};
+  \node[org, minimum width=1.4cm, right=0.2cm of lp] (lo) {organizacja};
+  \node[event, minimum width=1.4cm, right=0.2cm of lo] (le) {zdarzenie};
+  \node[loc, minimum width=1.4cm, right=0.2cm of le] (ll) {lokalizacja};
+  \draw[bridge] ([xshift=0.3cm]ll.east) -- ++(0.8,0)
+        node[right, font=\scriptsize, text=Slate]{powiązanie między wątkami};
+\end{scope}
+
+\end{tikzpicture}
+\caption{Uproszczony przykład grafu wiedzy zbudowanego z naszego korpusu artykułów. Węzły to
+obiekty różnych typów, krawędzie to nazwane relacje. Linie przerywane wyróżniają powiązania,
+które łączą oddzielne wątki (energetyczny i powodziowy) i których nie znajdziemy w żadnym
+pojedynczym artykule.}
+\label{fig:kg}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{GraphRAG firmy Microsoft}
+% ══════════════════════════════════════════════════════════════════════════════
+
+GraphRAG opisany przez Edge i współpracowników \cite{edge2024} powstał, by rozwiązać
+konkretny problem, z którym klasyczny RAG sobie nie radzi: globalne rozumienie całego zbioru
+dokumentów. Chodzi o pytania w stylu \enquote{jakie są główne wątki w tych materiałach?}, na
+które nie ma jednego najlepszego fragmentu, bo odpowiedź wymaga streszczenia całości. Autorzy
+nazywają to zadaniem podsumowania ukierunkowanego pytaniem.
+
+System działa w dwóch fazach. Najpierw, raz, buduje indeks z dokumentów. Potem korzysta z
+tego indeksu przy każdym zapytaniu. Warto je rozdzielić, bo to właśnie kosztowna faza
+indeksowania odróżnia GraphRAG od prostszego RAG.
+
+\subsection{Faza 1: indeksowanie}
+
+Budowa indeksu przebiega w kilku krokach, od surowego tekstu do gotowych podsumowań.
+
+\subsubsection{Podział na fragmenty}
+
+Dokumenty dzielone są na zachodzące na siebie fragmenty (w pracy domyślnie 600 tokenów ze
+100-tokenowym zakładem). Rozmiar fragmentu to istotny wybór projektowy. Dłuższe fragmenty
+oznaczają mniej wywołań modelu podczas ekstrakcji, ale model gorzej wychwytuje informacje
+pojawiające się pod koniec długiego fragmentu.
+
+\subsubsection{Ekstrakcja encji i relacji}
+
+Dla każdego fragmentu model językowy jest proszony o wypisanie:
+
+\begin{itemize}[itemsep=2pt]
+  \item encji, czyli nazwanych osób, organizacji, miejsc i zdarzeń, razem z krótkim opisem,
+  \item relacji, czyli skierowanych powiązań między parami encji, każdej z opisem,
+  \item faktów, czyli krótkich, weryfikowalnych stwierdzeń o encjach, na przykład dat i ról.
+\end{itemize}
+
+Prompt można dopasować do dziedziny, dodając przykłady charakterystyczne dla nauki, prawa
+czy medycyny. Ten krok jest sercem indeksowania i zarazem jego głównym kosztem, bo model
+trzeba wywołać osobno dla każdego fragmentu.
+
+\subsubsection{Budowa grafu wiedzy}
+
+Wszystkie wydobyte encje i relacje łączone są w jeden skierowany graf. Ta sama encja często
+pojawia się w wielu fragmentach, więc jej wystąpienia są scalane, a opisy podsumowywane przez
+model. Powtarzające się relacje również są łączone, a waga krawędzi odpowiada temu, jak
+często dana relacja występowała w tekście. W podstawowej wersji dopasowanie nazw odbywa się
+przez dokładne porównanie napisów, choć możliwe jest też łagodniejsze dopasowanie.
+
+\subsubsection{Wykrywanie społeczności}
+
+To krok, który najmocniej odróżnia GraphRAG od innych podejść grafowych. Na gotowym grafie
+uruchamiany jest algorytm wykrywania społeczności \textit{Leiden} \cite{traag2019}. Dzieli on
+graf na grupy gęsto powiązanych encji, na przykład wszystkie wątki wokół jednego szczytu albo
+wszystkich uczestników jednej afery. Co ważne, robi to hierarchicznie i na wielu poziomach:
+
+\begin{itemize}[itemsep=2pt]
+  \item poziom C0 to najszersze, najbardziej ogólne społeczności (jest ich najmniej),
+  \item poziomy C1, C2, C3 to coraz drobniejsze podspołeczności.
+\end{itemize}
+
+Każdy poziom pokrywa cały graf w sposób rozłączny i kompletny, więc daje inną
+\enquote{rozdzielczość} spojrzenia na zbiór. Rysunek~\ref{fig:comm} pokazuje tę ideę.
+
+\subsubsection{Podsumowania społeczności}
+
+Dla każdej społeczności, na każdym poziomie, model generuje opisowe podsumowanie w języku
+naturalnym. Podsumowania najniższego poziomu powstają z opisów encji, relacji i faktów.
+Podsumowania wyższych poziomów powstają z podsumowań ich podspołeczności, oddolnie. W efekcie
+powstaje bogaty, hierarchiczny zbiór gotowych streszczeń, które obejmują cały korpus jeszcze
+zanim padnie jakiekolwiek pytanie. To te streszczenia pozwalają później odpowiadać na pytania
+o całość bez czytania wszystkich fragmentów na nowo.
+
+% ── Rysunek C: hierarchia społeczności ────────────────────────────────────────
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize},
+  dot/.style={circle, draw, minimum size=4.5pt, inner sep=0pt},
+  tnode/.style={draw, rounded corners=2pt, align=center, font=\scriptsize,
+                minimum height=0.55cm, minimum width=1.5cm},
+  arr/.style={-{Stealth[length=1.6mm]}, draw=Slate}
+]
+
+% lewa strona: graf z trzema społecznościami
+\begin{scope}
+  % społeczność 1 (teal) - sieć energetyczna
+  \node[dot, fill=Teal] (g1) at (0.3,3.2) {};
+  \node[dot, fill=Teal] (g2) at (1.1,3.7) {};
+  \node[dot, fill=Teal] (g3) at (1.6,2.9) {};
+  \node[dot, fill=Teal] (g4) at (0.8,2.6) {};
+  \draw[Teal] (g1)--(g2) (g2)--(g3) (g3)--(g4) (g4)--(g1) (g1)--(g3);
+
+  % społeczność 2 (amber) - reagowanie kryzysowe
+  \node[dot, fill=Amber] (a1) at (3.2,1.0) {};
+  \node[dot, fill=Amber] (a2) at (3.9,1.5) {};
+  \node[dot, fill=Amber] (a3) at (4.3,0.7) {};
+  \draw[Amber] (a1)--(a2) (a2)--(a3) (a3)--(a1);
+
+  % społeczność 3 (blue) - administracja
+  \node[dot, fill=Blue] (b1) at (3.6,3.6) {};
+  \node[dot, fill=Blue] (b2) at (4.4,3.9) {};
+  \node[dot, fill=Blue] (b3) at (4.2,3.0) {};
+  \draw[Blue] (b1)--(b2) (b2)--(b3) (b3)--(b1);
+
+  % krawędzie między społecznościami
+  \draw[Slate!50] (g3)--(b3) (a2)--(b3);
+
+  \begin{pgfonlayer}{background}
+    \node[fill=LightTeal, rounded corners=6pt, fit=(g1)(g2)(g3)(g4), inner sep=5pt] {};
+    \node[fill=LightAmber, rounded corners=6pt, fit=(a1)(a2)(a3), inner sep=5pt] {};
+    \node[fill=LightBlue, rounded corners=6pt, fit=(b1)(b2)(b3), inner sep=5pt] {};
+  \end{pgfonlayer}
+  \node[font=\scriptsize\itshape, text=Slate] at (2.3,4.5) {graf podzielony na społeczności};
+\end{scope}
+
+% prawa strona: hierarchia + podsumowania
+\begin{scope}[xshift=7.0cm, yshift=0.2cm]
+  \node[tnode, fill=LightSlate] (c0) at (1.5,4.2) {C0: cały korpus};
+  \node[tnode, fill=LightTeal] (c1a) at (0,2.6) {C1: energia};
+  \node[tnode, fill=LightBlue] (c1b) at (3,2.6) {C1: kryzys};
+  \node[tnode, fill=LightTeal] (c2a) at (-0.6,1.0) {C2};
+  \node[tnode, fill=LightTeal] (c2b) at (1.0,1.0) {C2};
+  \node[tnode, fill=LightBlue] (c2c) at (3,1.0) {C2};
+
+  \draw[arr] (c0)--(c1a);
+  \draw[arr] (c0)--(c1b);
+  \draw[arr] (c1a)--(c2a);
+  \draw[arr] (c1a)--(c2b);
+  \draw[arr] (c1b)--(c2c);
+  \node[font=\scriptsize\itshape, text=Slate, align=center] at (1.5,5.0)
+    {hierarchia społeczności\\(każdy węzeł ma podsumowanie od modelu)};
+\end{scope}
+
+\end{tikzpicture}
+\caption{Wykrywanie społeczności dzieli graf na grupy gęsto powiązanych encji (po lewej), a
+robi to na wielu poziomach jednocześnie (po prawej). Dla każdej społeczności na każdym
+poziomie model generuje osobne podsumowanie. Poziom C0 daje najszersze spojrzenie, niższe
+poziomy coraz drobniejsze.}
+\label{fig:comm}
+\end{figure}
+
+\subsubsection{Osadzenia wektorowe}
+
+Warto w tym miejscu rozwiać częste nieporozumienie. GraphRAG nie rezygnuje z klasycznych
+osadzeń wektorowych, tych samych, na których opiera się zwykły RAG. Oprócz grafu i podsumowań
+system liczy na etapie indeksowania osadzenia dla opisów encji oraz dla podsumowań
+społeczności i zapisuje je w bazie wektorowej. Pełnią one jednak rolę pomocniczą, a nie
+główną. Służą do tego, żeby przy zapytaniu szybko dopasować pytanie do właściwych encji albo
+podsumowań, czyli znaleźć dobry punkt startowy w grafie. Sama odpowiedź powstaje już z treści
+grafu i streszczeń, a nie z surowych fragmentów wybranych po podobieństwie.
+Z tych osadzeń korzysta wyszukiwanie lokalne oraz DRIFT.
+
+\subsection{Faza 2: tryby zapytań}
+
+GraphRAG udostępnia kilka trybów odpowiadania, które korzystają z gotowego indeksu na zupełnie
+różne sposoby. Tryb wybiera się dla każdego pytania osobno.
+
+\subsubsection{Wyszukiwanie lokalne}
+
+Wyszukiwanie lokalne służy do pytań, które wskazują konkretną encję,
+na przykład \enquote{co zrobiła firma GreenGrid Europe?}. System zamienia pytanie na wektor i
+porównuje je z policzonymi wcześniej osadzeniami opisów encji, żeby znaleźć węzły startowe.
+Jest to więc dokładnie ten sam mechanizm, co w zwykłym RAG, tyle że tu szuka się pasujących
+encji, a nie pasujących fragmentów tekstu. Następnie system zbiera wokół
+nich kontekst z kilku źródeł naraz: fragmenty tekstu wspominające te encje, podsumowania
+społeczności, do których encje należą, sąsiednie encje w grafie, krawędzie wychodzące z
+węzłów startowych oraz związane z nimi fakty. To wszystko jest porządkowane według trafności,
+upakowywane w jedno okno kontekstu i przekazywane do modelu, który jednym wywołaniem tworzy
+odpowiedź. Lokalne wyszukiwanie jest więc tanie, bo ogranicza się do najbliższego otoczenia
+wskazanych encji.
+
+\subsubsection{Wyszukiwanie globalne}
+
+Wyszukiwanie globalne odpowiada na pytania bez konkretnej kotwicy,
+które dotyczą całego korpusu. Co istotne, ten tryb w ogóle nie sięga do grafu w trakcie
+zapytania i nie korzysta z osadzeń wektorowych. Działa wyłącznie na wcześniej przygotowanych
+podsumowaniach społeczności, w schemacie map-reduce:
+
+\begin{enumerate}[itemsep=2pt]
+  \item Wybierany jest poziom społeczności (na przykład C0 albo C2) i pobierane są wszystkie
+        podsumowania z tego poziomu.
+  \item Podsumowania są tasowane (żeby uniknąć faworyzowania początku kontekstu) i dzielone
+        na porcje mieszczące się w oknie modelu.
+  \item Krok \textit{map}: każda porcja trafia osobno do modelu, który wypisuje listę
+        krótkich stwierdzeń istotnych dla pytania, każde z oceną ważności od 0 do 100.
+        Wszystkie porcje przetwarzane są równolegle.
+  \item Stwierdzenia z oceną 0 są odrzucane.
+  \item Krok \textit{reduce}: pozostałe stwierdzenia są sortowane według ważności, pakowane
+        w nowe okno kontekstu i jednym końcowym wywołaniem model składa z nich globalną
+        odpowiedź.
+\end{enumerate}
+
+To podejście jest skuteczne, ale kosztowne, bo w kroku \textit{map} liczba wywołań modelu
+rośnie wraz z liczbą społeczności na wybranym poziomie. Na największym zbiorze z pracy
+poziom drobny oznacza setki wywołań na jedno pytanie, podczas gdy poziom C0 wystarcza zaledwie
+kilkudziesięciu wywołaniom przy umiarkowanym spadku jakości.
+
+\subsubsection{Wyszukiwanie DRIFT}
+
+Istnieje też tryb pośredni, DRIFT, który zaczyna od kontekstu globalnego (podsumowań
+społeczności), a potem iteracyjnie schodzi w głąb grafu poprzez wyszukiwanie lokalne,
+zadając kolejne pytania pomocnicze i pogłębiając te wątki, w których jest najbardziej pewny.
+Łączy więc szerokie spojrzenie z lokalną dokładnością.
+
+\subsection{Wyniki z pracy}
+
+Autorzy porównali GraphRAG z klasycznym RAG wektorowym na dwóch dużych korpusach (transkrypcje
+podcastów i artykuły prasowe, każdy rzędu miliona tokenów), używając modelu jako sędziego
+oceniającego odpowiedzi. GraphRAG na wszystkich poziomach społeczności wyraźnie wygrywał pod
+względem kompletności i różnorodności odpowiedzi, z przewagą rzędu 72--83\% i 62--82\%. Co
+ważne, podsumowania na poziomie C0 osiągały ten wynik, zużywając około 97\% mniej tokenów niż
+streszczanie wprost z tekstu źródłowego.
+
+\subsection{Ograniczenia}
+
+GraphRAG płaci za swoją skuteczność wysoką ceną, którą warto wyraźnie nazwać, bo to ona
+motywuje powstanie lżejszych systemów takich jak LightRAG.
+
+\begin{itemize}[itemsep=3pt]
+  \item \textbf{Kosztowne indeksowanie.} Model trzeba wywołać dla każdego fragmentu przy
+        ekstrakcji, a potem jeszcze raz dla każdej społeczności na każdym poziomie przy
+        generowaniu podsumowań. To przekłada się na bardzo dużo wywołań i tokenów, a w pracy
+        zbudowanie indeksu zajmowało rzędu kilku godzin.
+  \item \textbf{Drogie zapytania globalne.} Schemat map-reduce wykonuje osobne wywołanie
+        modelu na społeczność, więc na większych zbiorach jedno pytanie globalne to setki
+        wywołań.
+  \item \textbf{Trudna aktualizacja.} To może być najpoważniejsze ograniczenie w praktyce.
+        Dodanie nowych artykułów zmienia strukturę grafu, więc trzeba na nowo wykryć
+        społeczności i wygenerować dotknięte podsumowania. Przy strumieniu napływających
+        wiadomości oznacza to ciągłe, kosztowne przebudowywanie indeksu.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{LightRAG}
+% ══════════════════════════════════════════════════════════════════════════════
+
+LightRAG \cite{guo2024} to system zaprojektowany wprost po to, by usunąć dwa największe
+koszty GraphRAG opisane wyżej: drogie zapytania i kosztowną aktualizację indeksu.
+Najkrócej: LightRAG rezygnuje z hierarchii społeczności i z generowania ich
+podsumowań, a w zamian wprowadza dwupoziomowe wyszukiwanie po grafie wzbogaconym o bazę
+wektorową.
+
+\subsection{Indeksowanie}
+
+LightRAG buduje graf wiedzy podobnie jak GraphRAG, w trzech operacjach na każdym fragmencie:
+
+\begin{itemize}[itemsep=3pt]
+  \item \textbf{Ekstrakcja.} Model wydobywa encje i relacje z fragmentu, tak jak w GraphRAG.
+  \item \textbf{Profilowanie do par klucz-wartość.} Tu pojawia się główna różnica. Każdy
+        węzeł i każda krawędź zamieniane są na parę $(K, V)$. Klucz $K$ to słowo lub krótka
+        fraza służąca do wyszukiwania, a wartość $V$ to wygenerowany przez model akapit
+        opisujący daną encję lub relację wraz z istotnymi fragmentami źródła. Encja ma jeden
+        klucz, którym jest jej nazwa. Relacja może mieć kilka kluczy, bo są nimi
+        ogólniejsze frazy tematyczne opisujące, czego dotyczy powiązanie, na przykład
+        \enquote{współpraca energetyczna} czy \enquote{nadzór regulacyjny}.
+  \item \textbf{Deduplikacja.} Identyczne encje i relacje z różnych fragmentów są scalane,
+        żeby graf pozostał zwarty.
+\end{itemize}
+
+Najważniejsze, czego tu nie ma: nie ma wykrywania społeczności ani generowania ich
+podsumowań. To właśnie ten krok był w GraphRAG najdroższy i najtrudniejszy w aktualizacji.
+Klucze $K$ zapisywane są jako wektory w bazie wektorowej, więc do encji i relacji można potem
+docierać przez podobieństwo, podobnie jak do fragmentów w klasycznym RAG, tyle że tu obiektem
+wyszukiwania jest struktura grafu, a nie surowy tekst.
+
+\subsubsection{Aktualizacja przyrostowa}
+
+Nowy dokument przechodzi przez te same trzy operacje, a powstałe węzły i krawędzie są po
+prostu dołączane do istniejącego grafu jako suma zbiorów. Nie trzeba przebudowywać żadnej
+struktury społeczności, bo jej nie ma. To bezpośrednie rozwiązanie problemu, który w GraphRAG
+wymagał kosztownego przeliczania podsumowań przy każdej zmianie danych. Dla zbioru artykułów,
+który stale rośnie, jest to istotna różnica praktyczna.
+
+\subsection{Dwupoziomowe wyszukiwanie}
+
+Pomysł polega na tym, że pytania bywają dwojakiego rodzaju, więc i wyszukiwanie ma dwa
+poziomy:
+
+\begin{itemize}[itemsep=2pt]
+  \item poziom niski dotyczy konkretnych encji i ich atrybutów, na przykład
+        \enquote{kim jest Maria Nowak?},
+  \item poziom wysoki dotyczy szerszych tematów i powiązań, na przykład
+        \enquote{jak współpraca energetyczna wpływa na region?}.
+\end{itemize}
+
+Samo wyszukiwanie wygląda następująco:
+
+\begin{enumerate}[itemsep=3pt]
+  \item \textbf{Wydobycie słów kluczowych (jedno wywołanie modelu).} Pytanie trafia do
+        modelu, który wypisuje dwie listy: słowa lokalne (nazwy konkretnych encji) oraz słowa
+        globalne (frazy tematyczne opisujące, o co w pytaniu chodzi).
+  \item \textbf{Dopasowanie niskiego poziomu.} Słowa lokalne są porównywane z kluczami encji
+        w bazie wektorowej, co zwraca wartości $V$ pasujących encji.
+  \item \textbf{Dopasowanie wysokiego poziomu.} Słowa globalne są porównywane z kluczami
+        tematycznymi relacji, co zwraca wartości $V$ pasujących powiązań.
+  \item \textbf{Rozszerzenie o sąsiadów.} Dla dopasowanych encji i relacji dołączani są ich
+        bezpośredni sąsiedzi w grafie (sąsiedzi w odległości jednej krawędzi). Dzięki temu w
+        kontekście pojawiają się też encje, których nazwa nie padła w pytaniu, ale które są
+        powiązane z tymi, które padły.
+  \item \textbf{Złożenie kontekstu i odpowiedź (jedno wywołanie modelu).} Wszystkie zebrane
+        wartości $V$ są łączone i przekazywane modelowi razem z pytaniem, a model jednym
+        wywołaniem tworzy odpowiedź.
+\end{enumerate}
+
+W trybie hybrydowym, który jest zalecanym domyślnym ustawieniem, kroki dopasowania niskiego i
+wysokiego poziomu działają jednocześnie, więc system obsługuje zarówno pytania o konkretne
+encje, jak i o ogólne tematy. Kluczowa obserwacja kosztowa jest taka, że całe wyszukiwanie
+mieści się w zaledwie dwóch wywołaniach modelu, niezależnie od wielkości korpusu: jedno na
+wydobycie słów kluczowych i jedno na odpowiedź. Nie ma tu przechodzenia po setkach
+społeczności, bo społeczności w ogóle nie istnieją.
+
+Ciekawym wynikiem pracy jest test, w którym z wartości $V$ usunięto oryginalny
+tekst źródłowy, zostawiając tylko streszczenia wygenerowane przez model. Jakość
+odpowiedzi nie spadła, a w części dziedzin nawet wzrosła. Oznacza to, że
+uporządkowane streszczenia encji i relacji potrfią nieść wystarczająco dużo
+informacji by zastąpić surowy tekst.
+
+\subsection{Porównanie z GraphRAG}
+
+LightRAG i GraphRAG dzielą tę samą podstawową intuicję, że strukturę powiązań warto zapisać
+wprost przy budowie indeksu. Różnią się tym, co robią dalej. GraphRAG dokłada hierarchię
+społeczności i ich podsumowania, co świetnie służy pytaniom o sens całości, ale jest drogie i
+trudne w aktualizacji. LightRAG rezygnuje ze społeczności na rzecz dwupoziomowego
+wyszukiwania po parach klucz-wartość, co daje stały, niski koszt zapytania i tanie
+aktualizacje. Tabela~\ref{tab:porownanie} zbiera te różnice.
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\textwidth}{@{} p{3.4cm} X X @{}}
+\toprule
+\textbf{Aspekt} & \textbf{GraphRAG (Microsoft)} & \textbf{LightRAG} \\
+\midrule
+Główny pomysł
+  & hierarchia społeczności i podsumowania, odpowiedź metodą map-reduce
+  & płaski graf encji i relacji, odpowiedź przez dwupoziomowe wyszukiwanie \\
+Struktura grafu
+  & graf wiedzy z wielopoziomową hierarchią społeczności
+  & graf wiedzy z bazą wektorową par klucz-wartość \\
+Wywołania modelu przy zapytaniu
+  & rośnie z liczbą społeczności (setki dla dużych zbiorów)
+  & stałe, dwa wywołania niezależnie od wielkości korpusu \\
+Aktualizacja danych
+  & wymaga ponownego wykrycia społeczności i podsumowań
+  & dołączenie nowych węzłów i krawędzi, prawie bez kosztu \\
+Najlepszy typ pytań
+  & globalne pytania o sens całości
+  & zarówno konkretne, jak i tematyczne pytania o powiązania \\
+Słaby punkt
+  & wysoki koszt i trudna aktualizacja
+  & słabszy w czysto globalnym streszczaniu niż podsumowania społeczności \\
+\bottomrule
+\end{tabularx}
+\caption{Zestawienie GraphRAG i LightRAG na najważniejszych wymiarach.}
+\label{tab:porownanie}
+\end{table}
+
+W eksperymentach na czterech dziedzinach LightRAG wypadał lepiej od wszystkich porównywanych
+podejść, w tym od GraphRAG, jednocześnie będąc znacznie tańszym przy zapytaniach. Różnica w
+koszcie jest wyraźna: na największym zbiorze jedno zapytanie w GraphRAG zużywało setki
+tysięcy tokenów i setki wywołań modelu, podczas gdy w LightRAG było to mniej niż sto tokenów
+i pojedyncze wywołanie wyszukiwania. To pokazuje, że rezygnacja ze społeczności nie musi
+oznaczać gorszych odpowiedzi, a daje duże oszczędności tam, gdzie dane często się zmieniają.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Podsumowanie}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Klasyczny RAG opiera się na jednej operacji, czyli na wyszukiwaniu tekstów podobnych do
+pytania. Dla prostych pytań o fakty to w zupełności wystarcza i nie ma powodu sięgać po nic
+więcej. Trudność zaczyna się przy pytaniach o powiązania i o sens całości, bo taki indeks nie
+oddaje wprost powiązań między obiektami i potrafi je odtworzyć tylko przypadkiem.
+
+Systemy GraphRAG rozwiązują to, zapisując encje i relacje wprost w grafie wiedzy już na etapie
+indeksowania. GraphRAG firmy Microsoft idzie krok dalej i buduje hierarchię społeczności wraz
+z gotowymi podsumowaniami, dzięki czemu potrafi odpowiadać na pytania o całość korpusu. Płaci
+za to wysokim kosztem indeksowania, drogimi zapytaniami globalnymi i trudną aktualizacją
+przy nowych danych. LightRAG zachowuje sam graf, ale rezygnuje ze społeczności na rzecz
+dwupoziomowego wyszukiwania po parach klucz-wartość. Dzięki temu utrzymuje stały, niski koszt
+zapytania i pozwala tanio dokładać nowe dokumenty, co jest istotne dla stale rosnącego zbioru
+artykułów prasowych.
+
+Wybór między tymi podejściami zależy więc od zastosowania. Tam, gdzie najważniejsze są
+globalne streszczenia dużego, w miarę stałego korpusu, naturalnie pasuje GraphRAG. Tam, gdzie
+dane często się zmieniają, a pytania mieszają konkretne encje z ogólnymi tematami, lepiej
+sprawdza się LightRAG. Klasyczny RAG pozostaje rozsądnym, tanim punktem odniesienia dla
+prostych pytań. Te obserwacje stanowią tło dla naszych własnych eksperymentów na korpusie
+artykułów, które opiszemy w kolejnej części dokumentacji.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\appendix
+\section{Korpus użyty w projekcie}
+\label{app:korpus}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Do testów i przykładów w tym raporcie wykorzystujemy niewielki, ale spójny korpus wiadomości
+prasowych. Składa się on z 18 artykułów, oznaczonych jako materiał syntetyczny i opatrzonych
+datami z okresu od kwietnia do maja 2026 roku. Artykuły zostały przygotowane tak, aby tworzyły
+jedną, powiązaną historię, a nie zbiór niezależnych tekstów.
+
+Korpus splata dwa wątki:
+\begin{itemize}[itemsep=2pt]
+  \item wątek energetyczny wokół projektu rozbudowy bałtyckiej sieci energetycznej (Baltic
+        Grid Agreement), szczytu w Warszawie, morskich farm wiatrowych pod Gdańskiem oraz
+        magazynów energii,
+  \item wątek kryzysowy wokół powodzi w Krakowie i akcji ratunkowej prowadzonej przez
+        krajowe służby.
+\end{itemize}
+
+Najważniejszą cechą korpusu jest to, że te same obiekty powracają w wielu artykułach i łączą
+oba wątki. Na przykład firma Amber Analytics dostarcza czujniki do projektu energetycznego, a
+zarazem drony wykorzystane podczas powodzi, zaś Maria Nowak występuje i na szczycie
+energetycznym, i przy reakcji na kryzys. Dzięki temu korpus zawiera realne powiązania
+wielokrokowe, których nie da się odczytać z pojedynczego artykułu, co czyni go dobrym
+materiałem do porównania wyszukiwania klasycznego z grafowym.
+
+W korpusie występują obiekty czterech głównych typów:
+\begin{itemize}[itemsep=2pt]
+  \item osoby, na przykład Maria Nowak, Jonas Berg, Ewa Lewandowska,
+  \item organizacje, na przykład GreenGrid Europe, NordicGrid, Amber Analytics, Clear Air
+        Forum,
+  \item zdarzenia, na przykład Baltic Grid Agreement, szczyt energetyczny w Warszawie, powódź
+        w Krakowie,
+  \item lokalizacje, na przykład Warszawa, Gdańsk, Wilno, Kraków.
+\end{itemize}
+
+Do korpusu dołączony jest zestaw 18 pytań w stylu śledczym, na przykład \enquote{co łączy
+Marię Nowak z firmą GreenGrid Europe?}, z których każde ma przypisaną oczekiwaną odpowiedź.
+Służą one do oceny poszczególnych trybów wyszukiwania. 
+
+% ── bibliografia ──────────────────────────────────────────────────────────────
+\begin{thebibliography}{9}
+
+\bibitem{edge2024}
+Edge, D., Trinh, H., Cheng, N., Bradley, J., Chao, A., Mody, A., Truitt, S.,
+Metropolitansky, D., Ness, R.~O., Larson, J. (2024).
+\textit{From Local to Global: A GraphRAG Approach to Query-Focused Summarization.}
+arXiv:2404.16130.
+
+\bibitem{guo2024}
+Guo, Z., Xia, L., Yu, Y., Ao, T., Huang, C. (2024).
+\textit{LightRAG: Simple and Fast Retrieval-Augmented Generation.}
+arXiv:2410.05779.
+
+\bibitem{traag2019}
+Traag, V.~A., Waltman, L., van Eck, N.~J. (2019).
+\textit{From Louvain to Leiden: guaranteeing well-connected communities.}
+Scientific Reports, 9, 5233.
+
+\end{thebibliography}
+
+\end{document}
